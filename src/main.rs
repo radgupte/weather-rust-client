@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let auth = reqwest::Client::new()
-    .post("http://54.189.99.230:3000/v1/auth")
+    .post("http://172-31-13-213:3000/v1/auth")
     .json(&user)
     .send()
     .await?;
@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let w_token = "Bearer ".to_owned() + &token_res.access_token;
 
     let weather_res = client
-    .get("http://54.189.99.230:3000/v1/weather")
+    .get("http://172-31-13-213:3000/v1/weather")
     .header("Authorization", w_token)
     .send()
     .await?;
@@ -37,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let g_token = "Bearer ".to_owned() + &token_res.access_token;
 
     let greet_res = client
-    .get("http://54.189.99.230:3000/v1/hello")
+    .get("http://172-31-13-213:3000/v1/hello")
     .header("Authorization", g_token)
     .send()
     .await?;
