@@ -2,37 +2,52 @@ mod model;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // A hard-coded JSON
-    let json = r#"
-            {
-              "main": {
-                "temp": 30.94
-              }
-            }
-        "#;
-
-    // Deserialize the hardcoded JSON into a Weather struct
-    let weather1: model::Weather = serde_json::from_str(json).unwrap();
-
-    println!("\nWeather from a JSON we hard-coded locally:\n{:?}", weather1);
-
-    //
-    // Now that we know we can deserialize a hard-coded JSON into a struct model,
-    // let's see if we can fetch the weather from the backend.
-    //
-
     let client = reqwest::Client::new();
 
-    let response = client
-        .get("https://api.openweathermap.org/data/2.5/weather?q=corvallis&appid=b98e3f089c86867862f28236d174368a&&units=imperial")
-        .send()
-        .await?;
+    let user = model::User {
+      username: "rad".into(),
+      password: "abc54321".into(),
+    };
 
-    let weather2 = response
-        .json::<model::Weather>()
-        .await?;
+    let auth = reqwest::Client::new()
+    .post("http://54.189.99.230:3000/v1/auth")
+    .json(&user)
+    .send()
+    .await?;
 
-    println!("\nWeather from openweathermap.org:\n {:?}", weather2);
+    let token_res = auth.json::<model::TokenResponse>().await?;
+
+    // Fetch Weather from the EC2 instance
+    let w_token = "Bearer ".to_owned() + &token_res.access_token;
+
+    let weather_res = client
+    .get("http://54.189.99.230:3000/v1/weather")
+    .header("Authorization", w_token)
+    .send()
+    .await?;
+
+    let weather = weather_res.json::<model::Weather>().await?;
+
+    println!(
+      "\nWeather from server running on EC2 Instance:\n {:?}",
+      weather
+    );
+
+    // Fetch Greeting from the EC2 instance
+    let g_token = "Bearer ".to_owned() + &token_res.access_token;
+
+    let greet_res = client
+    .get("http://54.189.99.230:3000/v1/hello")
+    .header("Authorization", g_token)
+    .send()
+    .await?;
+
+    let greet = greet_res.json::<model::GreetingResponse>().await?;
+
+    println!(
+      "\nGreeting from server running on EC2 Instance:\n {:?}",
+      greet.message
+    );
 
     Ok(())
 }
